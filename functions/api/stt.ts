@@ -4,6 +4,7 @@ import {
   originAllowed,
   preflight,
   today,
+  upstreamCode,
   type QuotaEnv,
 } from './_shared';
 
@@ -66,6 +67,10 @@ export const onRequestPost: PagesFunction<QuotaEnv> = async ({ request, env }) =
   }
 
   if (!upstream.ok) {
+    // Status only — never the body, which can carry account detail.
+    console.log(
+      `stt upstream ${upstream.status} model=${STT_MODEL} code=${await upstreamCode(upstream)}`
+    );
     const status = upstream.status;
     return new Response('Upstream error', {
       status: status === 429 || status === 402 ? status : 502,

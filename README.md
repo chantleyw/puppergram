@@ -175,7 +175,7 @@ The QR payload is gzipped and base64url-encoded, because an eight-week passport 
 Three commands. **It runs with no API keys**, and voice still works via the browser backend.
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/puppergram.git
+git clone https://github.com/chantleyw/puppergram.git
 cd puppergram && npm install
 npm run dev
 ```
@@ -183,6 +183,35 @@ npm run dev
 Open http://localhost:5173 and press **Load demo litter**.
 
 To exercise the ElevenLabs proxy locally, copy `.dev.vars.example` to `.dev.vars`, add a key, and run `npm run pages:dev`. `.dev.vars` is gitignored and must never be committed.
+
+### Deploying your own
+
+```bash
+npx wrangler kv namespace create QUOTA
+```
+
+Paste the returned id into `wrangler.toml`, then:
+
+```bash
+npx wrangler pages project create puppergram --production-branch master
+```
+
+```bash
+npx wrangler pages secret put ELEVENLABS_API_KEY --project-name puppergram
+```
+
+Two things that will silently cost you an hour if you get them wrong, both learned the hard way:
+
+- **Pass the secret's name as an argument, as above.** With no name argument `wrangler` prompts for the *name* first, and pasting the key there stores it as a variable name. Names are not encrypted — the key ends up readable in the dashboard.
+- **Check the value actually landed.** `/api/health` returning `true` only proves a variable called `ELEVENLABS_API_KEY` exists, not that it holds a whole key. A truncated value produces an empty-bodied `400` from ElevenLabs, which looks exactly like a bad voice id.
+
+The key needs **Text to Speech → Access** and **Speech to Text → Access**. Everything else can be No Access. Set a hard monthly credit cap: the proxy serves anonymous visitors.
+
+```bash
+npm run build && npx wrangler pages deploy dist --project-name puppergram
+```
+
+If you name the project something other than `puppergram`, update `ALLOWED_ORIGINS` in `functions/api/_shared.ts` or the proxy will 403 its own site.
 
 | Command | |
 | --- | --- |

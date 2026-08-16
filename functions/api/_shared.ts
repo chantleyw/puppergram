@@ -30,6 +30,34 @@ export function originAllowed(origin: string, env: QuotaEnv): boolean {
   return configured.includes(origin) || PREVIEW_HOST.test(origin);
 }
 
+/**
+ * ElevenLabs errors look like `{"detail":{"status":"voice_not_found",...}}`.
+ * Returns just that slug for the logs — a machine-readable cause such as
+ * `voice_not_found` or `missing_permissions`. The human-readable message and
+ * the rest of the body are deliberately dropped, since they can carry account
+ * detail, and neither is ever returned to the client.
+ */
+export async function upstreamCode(res: Response): Promise<string> {
+  try {
+    const body = (await res.clone().json()) as {
+      detail?: { status?: string } | string;
+    };
+    const detail = body?.detail;
+    if (typeof detail === 'string') return detail.slice(0, 120);
+    if (detail?.status) return detail.status;
+  } catch {
+    /* not JSON — fall through */
+  }
+  // Auth failures are the one case where the body might describe the account,
+  // so those never get quoted, even in a log.
+  if (res.status === 401 || res.status === 403) return 'auth';
+  try {
+    return (await res.clone().text()).replace(/\s+/g, ' ').slice(0, 160);
+  } catch {
+    return 'unreadable';
+  }
+}
+
 export function today(): string {
   return new Date().toISOString().slice(0, 10);
 }

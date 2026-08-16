@@ -4,6 +4,7 @@ import {
   originAllowed,
   preflight,
   today,
+  upstreamCode,
   type QuotaEnv,
 } from './_shared';
 
@@ -77,9 +78,14 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   }
 
   if (!upstream.ok) {
-    // Never echo the upstream body — it can carry account detail.
+    // The status is logged so a misconfigured key or voice can be diagnosed
+    // from `wrangler pages deployment tail`. The body is never logged and
+    // never returned: it can carry account detail.
+    console.log(
+      `tts upstream ${upstream.status} voice=${voiceId} code=${await upstreamCode(upstream)}`
+    );
     // Pass quota signals through so the client downgrades for the right reason.
-    const status = upstream.status === 401 ? 502 : upstream.status;
+    const status = upstream.status;
     return new Response('Upstream error', {
       status: status === 429 || status === 402 ? status : 502,
     });
