@@ -247,7 +247,9 @@ export function LitterSetup() {
           disabled={!nextFree}
           className="tap mt-3 w-full rounded-lg border border-dashed border-cream/20 py-3 text-sm text-heat disabled:opacity-40"
         >
-          {nextFree ? '+ Add puppy' : 'All ten collars are in use'}
+          {nextFree
+            ? '+ Add puppy'
+            : `All ${COLLAR_ORDER.length} collars are in use`}
         </button>
       </section>
 

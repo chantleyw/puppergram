@@ -34,6 +34,11 @@ export interface CareEvent {
 }
 
 /**
+ * Eighteen collars. Large litters happen — a Labrador can throw twelve and
+ * the record is over twenty — so running out of collars mid-whelp is a real
+ * failure, not a theoretical one.
+ */
+/**
  * A sealed passport: the SHA-256 digest of the canonical passport JSON at the
  * moment of sealing, plus the Solana devnet transaction that anchors it.
  * Stored locally only; the chain holds nothing but the hash.
@@ -57,7 +62,15 @@ export type CollarColour =
   | 'pink'
   | 'white'
   | 'black'
-  | 'grey';
+  | 'grey'
+  | 'teal'
+  | 'brown'
+  | 'lime'
+  | 'maroon'
+  | 'navy'
+  | 'lavender'
+  | 'cream'
+  | 'silver';
 
 export class PuppergramDB extends Dexie {
   litters!: Table<Litter, number>;

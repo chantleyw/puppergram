@@ -76,6 +76,21 @@ Everything else — day columns, per-puppy series, daily gains, litter medians, 
 
 ---
 
+## Recording weights, including days you missed
+
+The weigh flow moves through the litter in collar order, one puppy per screen, never more than one tap apart. It is dark by default, the number pad targets are 48px minimum, and the header tints to the current puppy's collar so you know who you are holding without reading anything.
+
+**Backlogging is a first-class case, not an edge case.** The realistic situation is not "I will type each weight as I take it" — it is "I weighed them every day in a notebook and only got round to entering day 0 and day 9." A **Recording for** control sits above the keypad:
+
+- Defaults to **now**.
+- Day chips show, at a glance, which days are complete (`✓`), partly done (a count), or empty (`·`) — so the gaps are visible rather than remembered.
+- Or pick an exact date and time, clamped so an entry can never land before the whelp or in the future.
+
+Backlogged entries are stored identically to live ones and feed the same rules, so filling in a gap immediately recomputes that day's column, the daily gains either side of it, and the litter median. Two deliberate differences while backlogging:
+
+- The reference weight shown is **the last reading from a day before the target day** — never the target day's own existing reading, which would make the expected range describe the wrong day.
+- The spoken confirmation does **not** escalate. Triage describes a puppy's state *now*; announcing "call your vet" while filling in last Tuesday's paperwork would be wrong.
+
 ## Voice, via ElevenLabs
 
 **Voice is not a bolt-on here; it is the correct input method.** The user is holding a wet puppy in one hand and a kitchen scale in the other, at 3am, in a dim outbuilding. Typing is the worst available interface. Speaking *"blue, two forty five"* is the best one.
@@ -200,6 +215,8 @@ A **Tauri desktop build** is also included (`src-tauri/`) producing a 3.3 MB sta
 The subject's world is a dim outbuilding at 3am, a heat lamp, a kitchen scale, and coloured yarn tied round ten indistinguishable necks. The interface is designed from that, not from a dashboard template.
 
 **The collar spine** is the signature element and the entire visual language. Every puppy row and card carries a vertical yarn-coloured spine down its left edge; the growth chart draws each puppy's line in its literal collar colour; the weigh flow tints its header to the current puppy's colour. The result is that **the app needs no chart legend anywhere**, because the user already identifies puppies by exactly this system.
+
+There are **eighteen collars**, because large litters happen and running out mid-whelp is a real failure rather than a theoretical one. They are assigned in a fixed order rather than alphabetically: the first ten are the classic whelping ribbon colours and are maximally distinct from each other, so a litter of twelve still gets twelve obviously different collars before reaching the pairs that sit close together on screen (navy/blue, lavender/purple, silver/grey). The speech parser knows all of them, plus the obvious synonyms — `turquoise` for teal, `lilac` for lavender, `gray` for grey.
 
 Numerals are IBM Plex Mono with tabular figures throughout, so columns align, deltas scan vertically, and the data reads as instrument output rather than prose.
 

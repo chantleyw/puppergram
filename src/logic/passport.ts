@@ -5,12 +5,13 @@ export const PASSPORT_VERSION = 1;
 export const MEMO_PREFIX = 'PGRAM1:';
 
 /**
- * The passport is the artifact that gets hashed and anchored. Every field is
- * something the breeder typed; nothing here is derived, because derived values
- * would change if the rules changed and would break old seals.
+ * The passport is the record handed to the buyer at eight weeks: identity,
+ * parentage, and the complete weight series. Every field is something the
+ * breeder typed; nothing here is derived, so an exported passport stays valid
+ * even if the triage rules change later.
  *
- * Timestamps are ISO-8601 strings rather than epoch numbers so the canonical
- * form has no integer/float ambiguity to get wrong.
+ * Timestamps are ISO-8601 strings rather than epoch numbers so the exported
+ * file is readable by a human and unambiguous to a machine.
  */
 export interface Passport {
   v: number;
@@ -56,39 +57,57 @@ export function buildPassport(
 }
 
 /**
- * Canonical JSON: keys sorted at every level, no whitespace, integers only.
- * The digest must be reproducible byte for byte on any machine, in any
- * browser, years later — so this deliberately does not use JSON.stringify's
- * default key order (which follows insertion order).
+ * Canonical JSON: keys sorted at every level, integers only, and by default
+ * no whitespace at all. The digest must be reproducible byte for byte on any
+ * machine, in any browser, years later — so this deliberately does not use
+ * JSON.stringify's key order, which follows insertion order.
+ *
+ * `indent` is for the human-readable export file only. Never pass it when
+ * hashing: it would change the bytes and therefore the digest.
  */
-export function canonicalJson(value: unknown): string {
-  if (value === null) return 'null';
-  const t = typeof value;
-  if (t === 'number') {
-    if (!Number.isFinite(value as number)) {
-      throw new Error('Cannot canonicalise a non-finite number');
+export function canonicalJson(value: unknown, indent = 0): string {
+  const render = (v: unknown, depth: number): string => {
+    if (v === null) return 'null';
+    const t = typeof v;
+    if (t === 'number') {
+      if (!Number.isFinite(v as number)) {
+        throw new Error('Cannot serialise a non-finite number');
+      }
+      return Number.isInteger(v as number)
+        ? String(v)
+        : String(Number((v as number).toPrecision(15)));
     }
-    // Integers only in a passport; this keeps 250 from ever becoming 250.0.
-    return Number.isInteger(value as number)
-      ? String(value)
-      : String(Number((value as number).toPrecision(15)));
-  }
-  if (t === 'string' || t === 'boolean') return JSON.stringify(value);
-  if (Array.isArray(value)) {
-    return `[${value.map(canonicalJson).join(',')}]`;
-  }
-  if (t === 'object') {
-    const obj = value as Record<string, unknown>;
-    const keys = Object.keys(obj)
-      .filter((k) => obj[k] !== undefined)
-      .sort();
-    return `{${keys
-      .map((k) => `${JSON.stringify(k)}:${canonicalJson(obj[k])}`)
-      .join(',')}}`;
-  }
-  throw new Error(`Cannot canonicalise ${t}`);
+    if (t === 'string' || t === 'boolean') return JSON.stringify(v);
+
+    const pad = indent ? '\n' + ' '.repeat(indent * (depth + 1)) : '';
+    const close = indent ? '\n' + ' '.repeat(indent * depth) : '';
+
+    if (Array.isArray(v)) {
+      if (v.length === 0) return '[]';
+      return `[${pad}${v.map((x) => render(x, depth + 1)).join(`,${pad}`)}${close}]`;
+    }
+    if (t === 'object') {
+      const obj = v as Record<string, unknown>;
+      const keys = Object.keys(obj)
+        .filter((k) => obj[k] !== undefined)
+        .sort();
+      if (keys.length === 0) return '{}';
+      const body = keys
+        .map((k) => `${JSON.stringify(k)}:${indent ? ' ' : ''}${render(obj[k], depth + 1)}`)
+        .join(`,${pad}`);
+      return `{${pad}${body}${close}}`;
+    }
+    throw new Error(`Cannot serialise ${t}`);
+  };
+
+  return render(value, 0);
 }
 
+/* ------------------------------------------------------------------ */
+/* Hash anchoring                                                      */
+/* ------------------------------------------------------------------ */
+
+/** Always hashes the compact form — see the note on `indent` above. */
 export async function passportDigest(p: Passport): Promise<string> {
   return sha256Hex(canonicalJson(p));
 }
@@ -139,9 +158,9 @@ async function gunzip(bytes: Uint8Array): Promise<string> {
 }
 
 /**
- * Encodes a sealed bundle for the verify link / QR code. Gzipped because a
- * seven-puppy, eight-week passport is several kilobytes of very repetitive
- * JSON, and an uncompressed one will not fit in a scannable QR.
+ * Encodes a sealed bundle for the verify link / QR code. Gzipped because an
+ * eight-week passport is several kilobytes of very repetitive JSON, and an
+ * uncompressed one will not fit in a scannable QR.
  */
 export async function encodeBundle(bundle: SealedBundle): Promise<string> {
   return b64urlEncode(await gzip(canonicalJson(bundle)));

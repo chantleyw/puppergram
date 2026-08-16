@@ -117,7 +117,8 @@ export function Settings() {
       <section className="card mt-3 px-4 py-4">
         <h2 className="display text-base text-cream">Verify a passport</h2>
         <p className="mt-1 text-sm text-muted">
-          Buyers can check a sealed record without installing anything.
+          Buyers can check a sealed record without installing anything — no
+          wallet, no account.
         </p>
         <Link
           to="/verify"

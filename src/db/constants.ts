@@ -26,8 +26,23 @@ export const COLLARS: Record<
   white: { label: 'White', hex: '#FFFFFF' },
   black: { label: 'Black', hex: '#5B5158', ring: true },
   grey: { label: 'Grey', hex: '#B3A7AE' },
+  teal: { label: 'Teal', hex: '#2ED9C3' },
+  brown: { label: 'Brown', hex: '#A9714B' },
+  lime: { label: 'Lime', hex: '#B8E62E' },
+  maroon: { label: 'Maroon', hex: '#B02A4E' },
+  navy: { label: 'Navy', hex: '#2F4DB8' },
+  lavender: { label: 'Lavender', hex: '#D0B0FF' },
+  cream: { label: 'Cream', hex: '#F5E3B0' },
+  silver: { label: 'Silver', hex: '#C9CFD6', ring: true },
 };
 
+/**
+ * Assignment order, not alphabetical. The first ten are the classic whelping
+ * ribbon colours and are maximally distinct from one another; the rest follow
+ * in rough order of how easily they are told apart, so a litter of twelve
+ * still gets twelve obviously different collars before reaching the pairs
+ * that are close on screen (navy/blue, lavender/purple, silver/grey).
+ */
 export const COLLAR_ORDER: CollarColour[] = [
   'blue',
   'red',
@@ -39,6 +54,14 @@ export const COLLAR_ORDER: CollarColour[] = [
   'white',
   'black',
   'grey',
+  'teal',
+  'brown',
+  'lime',
+  'maroon',
+  'navy',
+  'lavender',
+  'cream',
+  'silver',
 ];
 
 /* ------------------------------------------------------------------ */

@@ -183,6 +183,24 @@ export function median(values: number[]): number | null {
   return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
 }
 
+/**
+ * The last weight recorded on a day earlier than `day`.
+ *
+ * Used by the weigh flow when backlogging: the reference for a day-3 entry is
+ * day 2, never day 3's own existing reading — otherwise the expected range
+ * describes the day *after* the one being typed in.
+ */
+export function lastPointBeforeDay(
+  points: WeightPoint[],
+  day: number
+): WeightPoint | null {
+  let found: WeightPoint | null = null;
+  for (const pt of points) {
+    if (pt.day < day && (!found || pt.at > found.at)) found = pt;
+  }
+  return found;
+}
+
 export function puppyLabel(p: Puppy): string {
   const collar = p.collar.charAt(0).toUpperCase() + p.collar.slice(1);
   return p.name ? `${collar} (${p.name})` : collar;

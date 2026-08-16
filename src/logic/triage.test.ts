@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { buildLitterView, type RuleId, type Severity } from './triage';
+import {
+  buildLitterView,
+  lastPointBeforeDay,
+  type RuleId,
+  type Severity,
+} from './triage';
 import { DAY, HOUR } from '../db/constants';
 import type { CareEvent, CollarColour, Litter, Puppy, WeightEntry } from '../db/schema';
 
@@ -318,6 +323,90 @@ describe('purity', () => {
     const a = buildLitterView(litter, [p], weights, [], now);
     const b = buildLitterView(litter, [p], weights, [], now);
     expect(JSON.stringify(a)).toBe(JSON.stringify(b));
+  });
+});
+
+/* ------------------------------------------------------------------ */
+/* Backlogged entries                                                  */
+/* ------------------------------------------------------------------ */
+
+describe('backlogged weights', () => {
+  it('lands a backdated weight in the right day column', () => {
+    const p = pup('blue');
+    // Typed in on day 9, but recorded against day 3.
+    const v = view([p], [w(p.id!, 0, 400), w(p.id!, 3 * 24 + 12, 520)], 9 * 24);
+    expect(v.puppies[0].cells[3].point!.grams).toBe(520);
+    expect(v.puppies[0].cells[9].point).toBeNull();
+  });
+
+  it('recomputes gains once the gap is filled in', () => {
+    const p = pup('blue');
+    const sparse = view([p], [w(p.id!, 0, 400), w(p.id!, 48, 470)], 3 * 24);
+    // Day 1 has no data, so day 2 is measured against day 0.
+    expect(sparse.puppies[0].cells[2].gainGrams).toBe(70);
+
+    const filled = view(
+      [p],
+      [w(p.id!, 0, 400), w(p.id!, 24, 432), w(p.id!, 48, 470)],
+      3 * 24
+    );
+    expect(filled.puppies[0].cells[1].gainGrams).toBe(32);
+    expect(filled.puppies[0].cells[2].gainGrams).toBe(38);
+  });
+
+  it('builds the missing day columns as soon as the backlog lands', () => {
+    const p = pup('blue');
+    const before = view([p], [w(p.id!, 0, 400), w(p.id!, 9 * 24, 900)], 9 * 24 + 1);
+    expect(before.days.map((d) => d.day)).toEqual([0, 9]);
+
+    const after = view(
+      [p],
+      [w(p.id!, 0, 400), w(p.id!, 4 * 24, 620), w(p.id!, 9 * 24, 900)],
+      9 * 24 + 1
+    );
+    expect(after.days.map((d) => d.day)).toEqual([0, 4, 9]);
+  });
+
+  it('treats a backfilled entry as evidence, not as a fresh weigh-in', () => {
+    // Latest entry is still the day-9 one, so "no weight in 36h" stays quiet
+    // even though the row just typed in is six days old.
+    const p = pup('blue');
+    const v = view(
+      [p],
+      [w(p.id!, 0, 400), w(p.id!, 3 * 24, 520), w(p.id!, 9 * 24, 900)],
+      9 * 24 + 2
+    );
+    expect(rulesFor(v, p.id!)).not.toContain('missing-entry');
+    expect(v.puppies[0].latest!.grams).toBe(900);
+  });
+});
+
+describe('the backlog reference weight', () => {
+  const p = pup('blue');
+  const v = view(
+    [p],
+    [w(p.id!, 0, 400), w(p.id!, 24, 452), w(p.id!, 48, 486), w(p.id!, 72, 522)],
+    5 * 24
+  );
+  const points = v.puppies[0].points;
+
+  it('ignores the target day\'s own reading', () => {
+    // Recording for day 3, the reference is day 2 — not day 3's existing 522,
+    // which would make the expected range describe day 4.
+    expect(lastPointBeforeDay(points, 3)!.grams).toBe(486);
+  });
+
+  it('skips forward days entirely', () => {
+    expect(lastPointBeforeDay(points, 1)!.grams).toBe(400);
+  });
+
+  it('returns null when nothing precedes the target day', () => {
+    expect(lastPointBeforeDay(points, 0)).toBeNull();
+  });
+
+  it('reaches back over gaps', () => {
+    const sparse = view([p], [w(p.id!, 0, 400)], 9 * 24);
+    expect(lastPointBeforeDay(sparse.puppies[0].points, 7)!.grams).toBe(400);
   });
 });
 

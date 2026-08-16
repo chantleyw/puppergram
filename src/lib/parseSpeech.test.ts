@@ -56,6 +56,26 @@ describe('collar recognition', () => {
     expect(c(phrase)).toBe(expected);
   });
 
+  it.each([
+    ['teal 300', 'teal'],
+    ['turquoise 300', 'teal'],
+    ['brown 300', 'brown'],
+    ['lime 300', 'lime'],
+    ['maroon 300', 'maroon'],
+    ['navy 300', 'navy'],
+    ['lavender 300', 'lavender'],
+    ['lilac 300', 'lavender'],
+    ['cream 300', 'cream'],
+    ['silver 300', 'silver'],
+  ])('hears the extended collar in %j', (phrase, expected) => {
+    expect(c(phrase)).toBe(expected);
+  });
+
+  it('keeps navy and blue apart', () => {
+    expect(c('navy four hundred')).toBe('navy');
+    expect(c('blue four hundred')).toBe('blue');
+  });
+
   it('ignores collars that are not in this litter', () => {
     expect(parseSpeech('purple 300', ['blue', 'red']).collar).toBeNull();
   });

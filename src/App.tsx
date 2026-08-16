@@ -6,6 +6,8 @@ import { LitterHome } from './components/LitterHome';
 import { WeighFlow } from './components/WeighFlow';
 import { PuppyDetail } from './components/PuppyDetail';
 import { Settings } from './components/Settings';
+import { Wordmark } from './components/Wordmark';
+import { loadDemoLitter } from './db/seed';
 
 /* The Solana stack is large and is needed on exactly two screens. Splitting it
    out keeps it off the weigh flow, which is the one used offline at 3am.
@@ -17,8 +19,6 @@ const PassportExport = lazy(() =>
 const VerifyPage = lazy(() =>
   import('./components/VerifyPage').then((m) => ({ default: m.VerifyPage }))
 );
-import { Wordmark } from './components/Wordmark';
-import { loadDemoLitter } from './db/seed';
 
 function Loading() {
   return (

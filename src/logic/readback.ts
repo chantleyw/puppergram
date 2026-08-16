@@ -46,6 +46,17 @@ export function weighReadback(p: PuppyView): string {
   return `${name}, ${grams}, down ${Math.abs(change)}.`;
 }
 
+/**
+ * Confirmation for a backlogged entry.
+ *
+ * Deliberately does not escalate: the triage rules describe a puppy's state
+ * *now*, and a weight typed in for last Tuesday is not news about tonight.
+ * Announcing "call your vet" while filling in old paperwork would be wrong.
+ */
+export function backlogReadback(label: string, grams: number, day: number): string {
+  return `${label}, ${grams} grams, recorded for day ${day}.`;
+}
+
 /** One button, whole-litter status, hands free. */
 export function dailyBriefing(view: LitterView): string {
   const parts: string[] = [];

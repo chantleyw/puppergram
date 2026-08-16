@@ -44,9 +44,7 @@ describe('canonical JSON', () => {
     expect(a).toBe('{"a":{"c":3,"d":2},"b":1}');
   });
 
-  it('emits no structural whitespace', () => {
-    // Whitespace inside a string value is content and must survive; what must
-    // not appear is any padding between tokens.
+  it('emits no structural whitespace when compact', () => {
     expect(canonicalJson({ b: 1, a: [1, 2], c: { d: 'x' } })).toBe(
       '{"a":[1,2],"b":1,"c":{"d":"x"}}'
     );
@@ -61,14 +59,25 @@ describe('canonical JSON', () => {
     expect(canonicalJson({ a: 1, b: undefined })).toBe('{"a":1}');
   });
 
-  it('refuses non-finite numbers instead of writing null', () => {
+  it('refuses non-finite numbers instead of silently writing null', () => {
     expect(() => canonicalJson({ n: NaN })).toThrow();
     expect(() => canonicalJson({ n: Infinity })).toThrow();
+  });
+
+  it('still parses back to the same value when indented for the export file', () => {
+    const pretty = canonicalJson(passport, 2);
+    expect(pretty).toMatch(/\n/);
+    expect(JSON.parse(pretty)).toEqual(JSON.parse(canonicalJson(passport)));
+  });
+
+  it('handles empty objects and arrays', () => {
+    expect(canonicalJson({ a: [], b: {} })).toBe('{"a":[],"b":{}}');
+    expect(canonicalJson({ a: [], b: {} }, 2)).toBe('{\n  "a": [],\n  "b": {}\n}');
   });
 });
 
 describe('passport contents', () => {
-  it('includes only this puppy\'s weights', () => {
+  it("includes only this puppy's weights", () => {
     expect(passport.weights).toHaveLength(3);
     expect(passport.weights.map((w) => w.g)).toEqual([380, 408, 438]);
   });
@@ -87,12 +96,23 @@ describe('passport contents', () => {
       breed: 'Labrador Retriever',
     });
   });
+
+  it('does not depend on the order rows come out of the database', () => {
+    const shuffled = [weights[2], weights[0], weights[3], weights[1]];
+    expect(canonicalJson(buildPassport(litter, puppy, shuffled, care))).toBe(
+      canonicalJson(passport)
+    );
+  });
+
+  it('re-exporting an unchanged record produces an identical file', () => {
+    const again = buildPassport(litter, puppy, weights, care);
+    expect(canonicalJson(again, 2)).toBe(canonicalJson(passport, 2));
+  });
 });
 
 describe('the digest', () => {
   it('is 64 lowercase hex characters', async () => {
-    const d = await passportDigest(passport);
-    expect(d).toMatch(/^[0-9a-f]{64}$/);
+    expect(await passportDigest(passport)).toMatch(/^[0-9a-f]{64}$/);
   });
 
   it('is reproducible for the same record', async () => {
@@ -108,9 +128,7 @@ describe('the digest', () => {
 
   /* This is the whole point of the feature. */
   it('changes when a single gram is edited', async () => {
-    const tampered = weights.map((w) =>
-      w.id === 2 ? { ...w, grams: 409 } : w
-    );
+    const tampered = weights.map((w) => (w.id === 2 ? { ...w, grams: 409 } : w));
     const p = buildPassport(litter, puppy, tampered, care);
     expect(await passportDigest(p)).not.toBe(await passportDigest(passport));
   });
@@ -126,6 +144,15 @@ describe('the digest', () => {
       { id: 2, litterId: 1, puppyId: 7, kind: 'vet', at: WHELPED + 2000 },
     ]);
     expect(await passportDigest(p)).not.toBe(await passportDigest(passport));
+  });
+
+  it('is unaffected by how the export file happens to be indented', async () => {
+    // The digest must come from the compact form, or a cosmetic change to the
+    // export would silently invalidate every existing seal.
+    const compact = canonicalJson(passport);
+    expect(await passportDigest(passport)).toBe(
+      await passportDigest(JSON.parse(compact))
+    );
   });
 });
 
@@ -161,8 +188,7 @@ describe('the QR bundle', () => {
 
   it('rejects something that is not a passport', async () => {
     const encoded = await encodeBundle({
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      passport: undefined as any,
+      passport: undefined as never,
       signature: '',
       cluster: 'devnet',
     });

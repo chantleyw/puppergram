@@ -10,8 +10,8 @@ export function isDesktop(): boolean {
 
 /**
  * Inside the app window, `target="_blank"` dead-ends: there is no tab to open.
- * Hand external links to the user's real browser instead — this is what the
- * Solana Explorer link on a sealed passport needs.
+ * Hand external links to the user's real browser instead — this is what
+ * the Solana Explorer link on a sealed passport needs.
  */
 export function installExternalLinkHandler(): () => void {
   if (!isDesktop()) return () => {};

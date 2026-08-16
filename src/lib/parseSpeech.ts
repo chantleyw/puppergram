@@ -69,6 +69,14 @@ const COLLAR_ALIASES: Record<string, CollarColour> = {
   white: 'white', wight: 'white',
   black: 'black',
   grey: 'grey', gray: 'grey',
+  teal: 'teal', turquoise: 'teal',
+  brown: 'brown',
+  lime: 'lime',
+  maroon: 'maroon',
+  navy: 'navy',
+  lavender: 'lavender', lilac: 'lavender',
+  cream: 'cream',
+  silver: 'silver',
 };
 
 type Tok =

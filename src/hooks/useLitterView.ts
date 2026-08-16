@@ -50,3 +50,4 @@ export function useSeals(puppyId: number | undefined) {
     return db.seals.where({ puppyId }).reverse().sortBy('sealedAt');
   }, [puppyId]);
 }
+

@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { useLiveQuery } from 'dexie-react-hooks';
 import QRCode from 'qrcode';
 import { db } from '../db/schema';
-import { useLiveQuery } from 'dexie-react-hooks';
 import {
   QR_PAYLOAD_LIMIT,
   buildPassport,
@@ -18,6 +18,12 @@ import { SolanaProviders } from './SolanaProviders';
 import { useSeals } from '../hooks/useLitterView';
 import { COLLARS } from '../db/constants';
 
+/**
+ * The record handed over at eight weeks. Printable as the buyer's paper copy,
+ * exportable as JSON — which doubles as the breeder's only backup, since
+ * nothing is stored off this device — and sealable on chain so the buyer can
+ * check it has not been edited since.
+ */
 export function PassportExport() {
   const puppyId = Number(useParams().puppyId);
   const seals = useSeals(puppyId);
@@ -33,10 +39,7 @@ export function PassportExport() {
   }, [puppyId]);
 
   const passport: Passport | null = useMemo(
-    () =>
-      data
-        ? buildPassport(data.litter, data.puppy, data.weights, data.care)
-        : null,
+    () => (data ? buildPassport(data.litter, data.puppy, data.weights, data.care) : null),
     [data]
   );
 
@@ -81,7 +84,7 @@ export function PassportExport() {
         errorCorrectionLevel: 'L',
         margin: 1,
         width: 320,
-        color: { dark: '#14100E', light: '#EDE3D8' },
+        color: { dark: '#171019', light: '#F8EDE4' },
       });
       if (!cancelled) setQr(png);
     })().catch(() => setQr(null));
@@ -105,7 +108,7 @@ export function PassportExport() {
   const accent = collarHex(puppy.collar);
 
   function downloadJson() {
-    const blob = new Blob([canonicalJson(passport)], { type: 'application/json' });
+    const blob = new Blob([canonicalJson(passport, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -131,14 +134,13 @@ export function PassportExport() {
           <button
             type="button"
             onClick={downloadJson}
-            className="tap rounded-lg border border-cream/20 px-4 py-2 text-sm text-cream"
+            className="tap gradient-action rounded-lg px-4 py-2 text-sm font-semibold"
           >
             Download JSON
           </button>
         </div>
       </div>
 
-      {/* ---------------- The record ---------------- */}
       <article className="card px-5 py-5 print-block">
         <header className="flex items-start gap-3 border-b border-cream/10 pb-4">
           <span
@@ -162,11 +164,11 @@ export function PassportExport() {
 
         <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2 text-sm sm:grid-cols-4">
           <div>
-            <dt className="text-xs text-muted">Dam</dt>
+            <dt className="text-xs text-muted">Dam (mother)</dt>
             <dd className="text-cream">{litter.damName}</dd>
           </div>
           <div>
-            <dt className="text-xs text-muted">Sire</dt>
+            <dt className="text-xs text-muted">Sire (father)</dt>
             <dd className="text-cream">{litter.sireName || '—'}</dd>
           </div>
           <div>
@@ -179,9 +181,7 @@ export function PassportExport() {
           </div>
         </dl>
 
-        <h2 className="mt-5 text-xs uppercase tracking-wide text-muted">
-          Weight series
-        </h2>
+        <h2 className="mt-5 text-xs uppercase tracking-wide text-muted">Weight series</h2>
         <table className="mt-1.5 w-full border-collapse text-sm">
           <thead>
             <tr className="border-b border-cream/10 text-left">
@@ -209,16 +209,14 @@ export function PassportExport() {
 
         {passport.care.length > 0 && (
           <>
-            <h2 className="mt-5 text-xs uppercase tracking-wide text-muted">
-              Care events
-            </h2>
+            <h2 className="mt-5 text-xs uppercase tracking-wide text-muted">Care events</h2>
             <ul className="mt-1.5 space-y-1 text-sm">
               {passport.care.map((c, i) => (
                 <li key={i} className="flex gap-2 border-b border-cream/5 py-1 last:border-0">
                   <span className="num shrink-0 text-muted">
                     {fmtDate(new Date(c.at).getTime())}
                   </span>
-                  <span className="text-cream">{c.kind}</span>
+                  <span className="text-cream capitalize">{c.kind}</span>
                   <span className="text-muted">{c.note}</span>
                 </li>
               ))}
@@ -241,7 +239,6 @@ export function PassportExport() {
         </p>
       </article>
 
-      {/* ---------------- Verification QR ---------------- */}
       {(qr || qrTooBig) && (
         <section className="card mt-4 px-5 py-4 print-block">
           <h2 className="display text-lg text-cream">Give this to the buyer</h2>
@@ -267,6 +264,15 @@ export function PassportExport() {
           )}
         </section>
       )}
+
+      <section className="card no-print mt-4 px-5 py-4">
+        <h2 className="display text-base text-cream">Keep a copy</h2>
+        <p className="mt-1 text-sm leading-snug text-muted">
+          Nothing is stored off this device. Download the JSON before clearing
+          data or changing browser — that file is your only backup, and it is
+          the copy worth handing to the buyer alongside the printed record.
+        </p>
+      </section>
 
       <div className="mt-4">
         <SolanaProviders>
