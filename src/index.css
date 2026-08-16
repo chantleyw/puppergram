@@ -1,0 +1,136 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --ink: #14100e;
+    --surface: #1f1916;
+    --raised: #2a2220;
+    --cream: #ede3d8;
+    --muted: #9c8b7e;
+    --heat: #f2a65a;
+    --good: #7fb069;
+    --caution: #f2c14e;
+    --alarm: #e0574f;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    background-color: var(--ink);
+    color: var(--cream);
+    font-family: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    /* Used in the dark; never let a rubber-band scroll flash white. */
+    overscroll-behavior-y: none;
+  }
+
+  /* Every weight, delta and day column is instrument output, not prose. */
+  .num {
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum' 1, 'zero' 1;
+  }
+
+  .display {
+    font-family: 'Bricolage Grotesque', ui-sans-serif, system-ui, sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--heat);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* Keep the focus ring, drop the mouse-click ring. */
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  ::selection {
+    background: var(--heat);
+    color: var(--ink);
+  }
+}
+
+@layer components {
+  /* The collar spine: a length of yarn down the left edge of every row and
+     card. It is the only saturated colour in the interface. */
+  .spine {
+    position: relative;
+    padding-left: 0.875rem;
+  }
+  .spine::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.35rem;
+    bottom: 0.35rem;
+    width: 5px;
+    border-radius: 999px;
+    background: var(--spine-color, var(--muted));
+  }
+  /* White and black collars need an edge or they vanish into the surface. */
+  .spine[data-ring='true']::before {
+    box-shadow: 0 0 0 1px rgba(237, 227, 216, 0.45);
+  }
+
+  .card {
+    background-color: var(--surface);
+    border: 1px solid rgba(237, 227, 216, 0.07);
+    border-radius: 0.75rem;
+  }
+
+  .raised {
+    background-color: var(--raised);
+  }
+
+  /* Minimum 48px hit target in the weigh flow. */
+  .tap {
+    min-height: 48px;
+    min-width: 48px;
+  }
+}
+
+/* Motion is limited to the number roll and one alert pulse. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* The passport prints as the buyer's paper record. */
+@media print {
+  :root {
+    --ink: #ffffff;
+    --surface: #ffffff;
+    --raised: #f4f0eb;
+    --cream: #14100e;
+    --muted: #5c5148;
+  }
+  body {
+    background: #fff !important;
+    color: #14100e !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .card {
+    border-color: #d8cfc4 !important;
+    break-inside: avoid;
+  }
+  .print-block {
+    break-inside: avoid;
+  }
+}

@@ -1,0 +1,10 @@
+# Copy to `.dev.vars` for local Pages Functions development.
+# `.dev.vars` is gitignored and must never be committed.
+#
+# Leave this empty and the app still works end to end:
+# /api/health reports { elevenlabs: false } and voice silently
+# falls back to the Web Speech API, then to the manual keypad.
+ELEVENLABS_API_KEY=
+
+# Optional. Defaults to a public ElevenLabs voice if unset.
+ELEVENLABS_VOICE_ID=
