@@ -317,4 +317,10 @@ No accounts, no auth, no server-side database. Persistence is per-device.
 
 ---
 
+## Licence
+
+MIT — see [LICENSE](LICENSE).
+
+---
+
 > **Puppergram is a breeder's record-keeping tool. It is not veterinary advice, and it is not a health certificate. If something looks wrong, call your vet.**
