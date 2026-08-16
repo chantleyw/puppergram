@@ -170,13 +170,23 @@ Buyers are handed printed "health records" that are trivially fabricated, and ha
 
 ### Verify it yourself
 
-**No passport has been sealed on this deployment.** Sealing needs a funded devnet wallet, and there isn't one behind this build — so rather than show a signature that does not exist, here is exactly what you can and cannot check.
+**A real sealed passport, on devnet:**
 
-**Verifiable now, with nothing installed:** open [/verify](https://puppergram.pages.dev/verify), paste any passport JSON exported from the app, and give it any devnet signature. The page fetches that transaction, re-hashes your JSON, and compares. You will get a real verdict — `no Puppergram seal on that transaction` for an unrelated signature, and a clear mismatch if the memo carries a different digest.
+```
+jQbLD3m3zZQCGUtQ8hWfUujyRYqriLKrJcwdUPNuH137QXqZA3Lz7CMzeRs4TYxkzMjBFvC19b6ZMsK3BV5PdwK
+```
 
-**Not demonstrated here:** a genuine matching pair. That needs someone to seal a puppy with a devnet-funded wallet, which takes about five minutes with Phantom and free faucet SOL.
+Paste it into [Solana Explorer (devnet)](https://explorer.solana.com/tx/jQbLD3m3zZQCGUtQ8hWfUujyRYqriLKrJcwdUPNuH137QXqZA3Lz7CMzeRs4TYxkzMjBFvC19b6ZMsK3BV5PdwK?cluster=devnet) — remember to set the cluster to devnet — and you will see one SPL Memo instruction and nothing else:
 
-**Provable without the chain at all:** that the digest behaves correctly. The hashing, canonical JSON and tamper-detection are covered by tests — a single gram edited, a weight deleted, a care event added, and the key ordering reversed all change the digest, while re-serialising the same record does not:
+```
+Program log: Memo (len 71): "PGRAM1:13de6b0ceda53db495804660c51cddbfe47c2c915fa1b609739c0ff1c4ef423b"
+```
+
+That is the entire on-chain footprint of a sealed puppy: a prefix and a SHA-256. No name, no dam, no weights, no photo, no token. Sealed 16 August 2026 at 17:38 UTC, in slot 484515698, for a total fee of 0.00008 SOL.
+
+**Try the mismatch yourself.** Open [/verify](https://puppergram.pages.dev/verify), paste that signature, and give it *any* passport JSON — one exported from your own demo litter will do. It will report **Record does not match**, because the digest of your record is not the digest on chain. That is the tamper-detection working: the page has no idea what the original said, only that this is not it.
+
+**Provable without the chain at all:** that the digest itself behaves. The hashing, canonical JSON and tamper-detection are covered by tests — a single gram edited, a weight deleted, a care event added, and the key ordering reversed all change the digest, while re-serialising the same record does not:
 
 ```bash
 npm test -- passport
