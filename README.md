@@ -184,7 +184,11 @@ Program log: Memo (len 71): "PGRAM1:13de6b0ceda53db495804660c51cddbfe47c2c915fa1
 
 That is the entire on-chain footprint of a sealed puppy: a prefix and a SHA-256. No name, no dam, no weights, no photo, no token. Sealed 16 August 2026 at 17:38 UTC, in slot 484515698, for a total fee of 0.00008 SOL.
 
-**Try the mismatch yourself.** Open [/verify](https://puppergram.pages.dev/verify), paste that signature, and give it *any* passport JSON — one exported from your own demo litter will do. It will report **Record does not match**, because the digest of your record is not the digest on chain. That is the tamper-detection working: the page has no idea what the original said, only that this is not it.
+**Both verdicts are confirmed on real hardware.** Sealing a puppy, scanning its QR with a phone, and landing on `/verify` reports **✓ Record verified** — the buyer's flow, end to end, with no app and no wallet.
+
+**Try the mismatch yourself.** Open [/verify](https://puppergram.pages.dev/verify), paste the signature above, and give it *any* passport JSON — one exported from your own demo litter will do. It reports **Record does not match**, because the digest of your record is not the digest on chain. That is the tamper-detection working: the page has no idea what the original said, only that this is not it.
+
+The QR is worth a note. A passport payload needs a 77-module symbol, so it is generated at 1024px with a full four-module quiet zone and only ever scaled *down* for display — roughly four pixels per module, twelve on a phone. Rendered small it does not merely scan poorly, it cannot be read at all. There is a copy-link button beside it too, because a phone cannot scan its own screen, and because a link is how a record actually gets passed on.
 
 **Provable without the chain at all:** that the digest itself behaves. The hashing, canonical JSON and tamper-detection are covered by tests — a single gram edited, a weight deleted, a care event added, and the key ordering reversed all change the digest, while re-serialising the same record does not:
 
