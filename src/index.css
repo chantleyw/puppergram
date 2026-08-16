@@ -4,15 +4,18 @@
 
 @layer base {
   :root {
-    --ink: #14100e;
-    --surface: #1f1916;
-    --raised: #2a2220;
-    --cream: #ede3d8;
-    --muted: #9c8b7e;
-    --heat: #f2a65a;
-    --good: #7fb069;
-    --caution: #f2c14e;
-    --alarm: #e0574f;
+    --ink: #171019;
+    --surface: #241925;
+    --raised: #332334;
+    --cream: #f8ede4;
+    --muted: #b49da6;
+    --heat: #ff9e44;
+    --berry: #ff4d8d;
+    --iris: #9b7bff;
+    --mint: #3dd9a0;
+    --good: #3dd9a0;
+    --caution: #ffcc33;
+    --alarm: #ff5566;
   }
 
   html,
@@ -23,6 +26,13 @@
 
   body {
     background-color: var(--ink);
+    /* Two very low-alpha pools of colour so the background reads as lit
+       rather than as flat black. Fixed, so it never moves while scrolling. */
+    background-image:
+      radial-gradient(70rem 40rem at 12% -8%, rgba(255, 77, 141, 0.13), transparent 60%),
+      radial-gradient(60rem 36rem at 92% 4%, rgba(155, 123, 255, 0.13), transparent 60%),
+      radial-gradient(52rem 32rem at 50% 108%, rgba(255, 158, 68, 0.1), transparent 60%);
+    background-attachment: fixed;
     color: var(--cream);
     font-family: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
@@ -83,13 +93,33 @@
   }
 
   .card {
-    background-color: var(--surface);
-    border: 1px solid rgba(237, 227, 216, 0.07);
-    border-radius: 0.75rem;
+    background-color: color-mix(in srgb, var(--surface) 88%, transparent);
+    border: 1px solid rgba(248, 237, 228, 0.1);
+    border-radius: 0.875rem;
+    backdrop-filter: blur(8px);
   }
 
   .raised {
     background-color: var(--raised);
+  }
+
+  /* Lively text fill for the wordmark and screen titles. */
+  .gradient-text {
+    background-image: linear-gradient(
+      100deg,
+      var(--heat) 0%,
+      var(--berry) 45%,
+      var(--iris) 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* Primary action fill. */
+  .gradient-action {
+    background-image: linear-gradient(100deg, var(--heat), var(--berry));
+    color: #1a0f16;
   }
 
   /* Minimum 48px hit target in the weigh flow. */

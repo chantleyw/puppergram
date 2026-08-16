@@ -16,16 +16,16 @@ export const COLLARS: Record<
   CollarColour,
   { label: string; hex: string; ring?: boolean }
 > = {
-  blue: { label: 'Blue', hex: '#4F8FE0' },
-  red: { label: 'Red', hex: '#E2514A' },
-  green: { label: 'Green', hex: '#5FB25F' },
-  yellow: { label: 'Yellow', hex: '#E8C53F' },
-  purple: { label: 'Purple', hex: '#A171D8' },
-  orange: { label: 'Orange', hex: '#EE8B3C' },
-  pink: { label: 'Pink', hex: '#E87FA8' },
-  white: { label: 'White', hex: '#F2ECE4' },
-  black: { label: 'Black', hex: '#4A4340', ring: true },
-  grey: { label: 'Grey', hex: '#A79C93' },
+  blue: { label: 'Blue', hex: '#3D9BFF' },
+  red: { label: 'Red', hex: '#FF4A4A' },
+  green: { label: 'Green', hex: '#46D66B' },
+  yellow: { label: 'Yellow', hex: '#FFD426' },
+  purple: { label: 'Purple', hex: '#B473FF' },
+  orange: { label: 'Orange', hex: '#FF9224' },
+  pink: { label: 'Pink', hex: '#FF6FB0' },
+  white: { label: 'White', hex: '#FFFFFF' },
+  black: { label: 'Black', hex: '#5B5158', ring: true },
+  grey: { label: 'Grey', hex: '#B3A7AE' },
 };
 
 export const COLLAR_ORDER: CollarColour[] = [

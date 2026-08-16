@@ -1,9 +1,9 @@
 export function Wordmark({ compact = false }: { compact?: boolean }) {
   return (
     <div>
-      <p className="display text-xl leading-none text-cream">
+      <p className="display gradient-text text-xl leading-none">
         Puppergram
-        <span className="ml-1.5 text-heat" aria-hidden>
+        <span className="ml-1.5" aria-hidden>
           ·
         </span>
       </p>

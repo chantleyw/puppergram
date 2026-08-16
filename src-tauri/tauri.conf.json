@@ -1,0 +1,44 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Puppergram",
+  "version": "1.0.0",
+  "identifier": "dev.puppergram.app",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:5173",
+    "beforeBuildCommand": "npm run build:desktop",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Puppergram",
+        "width": 1180,
+        "height": 840,
+        "minWidth": 360,
+        "minHeight": 560,
+        "resizable": true,
+        "center": true,
+        "backgroundColor": "#14100E",
+        "theme": "Dark"
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis"],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "copyright": "Puppergram",
+    "shortDescription": "Neonatal litter monitor",
+    "longDescription": "Weight-led early warning for newborn puppies, birth to eight weeks. A breeder's record-keeping tool, not veterinary advice."
+  }
+}

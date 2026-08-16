@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Puppergram needs only one capability: opening an external link in the user's real browser.",
+  "windows": ["main"],
+  "permissions": ["core:default", "opener:allow-open-url"]
+}

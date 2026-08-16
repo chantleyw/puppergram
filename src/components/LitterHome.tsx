@@ -45,7 +45,7 @@ export function LitterHome({ view }: { view: LitterView }) {
         <h1 className="display text-2xl leading-tight text-cream">
           {view.litter.damName}
           {view.litter.sireName && (
-            <span className="text-muted"> × {view.litter.sireName}</span>
+            <span className="text-berry"> × {view.litter.sireName}</span>
           )}
         </h1>
         <p className="num text-sm text-muted">
@@ -61,7 +61,7 @@ export function LitterHome({ view }: { view: LitterView }) {
         <div className="grid grid-cols-2 gap-3">
           <Link
             to="/weigh"
-            className="tap flex h-14 items-center justify-center rounded-xl bg-heat text-base font-semibold text-ink"
+            className="tap gradient-action flex h-14 items-center justify-center rounded-xl text-base font-semibold shadow-lg shadow-berry/20"
           >
             Weigh the litter
           </Link>
@@ -69,7 +69,7 @@ export function LitterHome({ view }: { view: LitterView }) {
             type="button"
             onClick={brief}
             aria-pressed={speaking}
-            className="tap flex h-14 items-center justify-center gap-2 rounded-xl border border-cream/20 text-base text-cream"
+            className="tap flex h-14 items-center justify-center gap-2 rounded-xl border border-iris/40 bg-iris/10 text-base text-cream hover:bg-iris/15"
           >
             <span aria-hidden>{speaking ? '■' : '▶'}</span>
             {speaking ? 'Stop' : 'Daily briefing'}

@@ -6,15 +6,22 @@ export default {
   theme: {
     extend: {
       colors: {
-        ink: '#14100E',
-        surface: '#1F1916',
-        raised: '#2A2220',
-        cream: '#EDE3D8',
-        muted: '#9C8B7E',
-        heat: '#F2A65A',
-        good: '#7FB069',
-        caution: '#F2C14E',
-        alarm: '#E0574F',
+        // Still dark — this is used at 3am — but with real chroma in the
+        // base rather than a flat brown-grey.
+        ink: '#171019',
+        surface: '#241925',
+        raised: '#332334',
+        cream: '#F8EDE4',
+        muted: '#B49DA6',
+        // Vivid accents. These only ever appear on chrome and controls, never
+        // as a puppy's identity, so they don't compete with the collars.
+        heat: '#FF9E44',
+        berry: '#FF4D8D',
+        iris: '#9B7BFF',
+        mint: '#3DD9A0',
+        good: '#3DD9A0',
+        caution: '#FFCC33',
+        alarm: '#FF5566',
       },
       fontFamily: {
         display: ['"Bricolage Grotesque"', 'ui-sans-serif', 'system-ui', 'sans-serif'],

@@ -53,10 +53,10 @@ export function gainTone(gainPct: number | null): string {
 /** Cell tint for the matrix, keyed off daily gain. */
 export function gainCellClass(gainPct: number | null): string {
   if (gainPct === null) return '';
-  if (gainPct < 0) return 'bg-alarm/15';
-  if (gainPct < 0.02) return 'bg-caution/15';
-  if (gainPct >= 0.05) return 'bg-good/12';
-  return 'bg-good/5';
+  if (gainPct < 0) return 'bg-alarm/25';
+  if (gainPct < 0.02) return 'bg-caution/25';
+  if (gainPct >= 0.05) return 'bg-mint/20';
+  return 'bg-mint/10';
 }
 
 export const fmtGrams = (g: number) => `${Math.round(g)}`;
