@@ -46,6 +46,8 @@ export function PassportExport() {
   const [digest, setDigest] = useState<string | null>(null);
   const [qr, setQr] = useState<string | null>(null);
   const [qrTooBig, setQrTooBig] = useState(false);
+  const [verifyUrl, setVerifyUrl] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (!passport) return;
@@ -80,13 +82,23 @@ export function PassportExport() {
       }
       setQrTooBig(false);
       const url = `${window.location.origin}/verify#p=${encoded}`;
+      // A passport payload needs a QR of ~100-130 modules. Rendered small it
+      // is not merely hard to scan, it is impossible: a scanner needs several
+      // pixels per module, and at 160px these land at barely one. Generate
+      // large and let the page scale it down, never up.
       const png = await QRCode.toDataURL(url, {
         errorCorrectionLevel: 'L',
-        margin: 1,
-        width: 320,
+        // The spec requires a four-module quiet zone. Below that many
+        // scanners will not detect the symbol at all, however sharp it is —
+        // which is the likelier reason a small QR "just doesn't work".
+        margin: 4,
+        width: 1024,
         color: { dark: '#171019', light: '#F8EDE4' },
       });
-      if (!cancelled) setQr(png);
+      if (!cancelled) {
+        setQr(png);
+        setVerifyUrl(url);
+      }
     })().catch(() => setQr(null));
     return () => {
       cancelled = true;
@@ -243,17 +255,56 @@ export function PassportExport() {
         <section className="card mt-4 px-5 py-4 print-block">
           <h2 className="display text-lg text-cream">Give this to the buyer</h2>
           {qr ? (
-            <div className="mt-2 flex flex-wrap items-center gap-4">
+            <div className="mt-2 flex flex-col gap-4 sm:flex-row sm:items-start">
               <img
                 src={qr}
                 alt="QR code containing this passport and its transaction signature"
-                className="h-40 w-40 rounded-lg"
+                width={1024}
+                height={1024}
+                className="w-full max-w-[320px] self-center rounded-lg bg-cream sm:self-start"
               />
-              <p className="max-w-sm text-sm text-muted">
-                Scanning this opens the verify page with the full record and its
-                signature already filled in. No app, no wallet, no account
-                needed to check it.
-              </p>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm text-muted">
+                  The buyer scans this with their own phone. It opens the verify
+                  page with the full record and its signature already filled in
+                  — no app, no wallet, no account.
+                </p>
+
+                {/* You cannot scan your own screen, so there is a link too —
+                    which is also how you hand a record over by message. */}
+                <div className="no-print mt-3 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (!verifyUrl) return;
+                      try {
+                        await navigator.clipboard.writeText(verifyUrl);
+                        setCopied(true);
+                        setTimeout(() => setCopied(false), 2000);
+                      } catch {
+                        setCopied(false);
+                      }
+                    }}
+                    className="tap rounded-lg border border-cream/20 px-4 py-2 text-sm text-cream"
+                  >
+                    {copied ? 'Copied' : 'Copy verify link'}
+                  </button>
+                  {verifyUrl && (
+                    <a
+                      href={verifyUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="tap rounded-lg border border-cream/20 px-4 py-2 text-sm text-cream"
+                    >
+                      Open it here
+                    </a>
+                  )}
+                </div>
+                <p className="mt-2 text-xs text-muted">
+                  Use the link to check the seal on this device — a phone cannot
+                  scan its own screen.
+                </p>
+              </div>
             </div>
           ) : (
             <p className="mt-2 text-sm text-muted">
