@@ -116,9 +116,19 @@ The interesting case is the **elided hundred**: *"two forty five"* means 245, so
 
 ### Three-layer backend resolution — no key entry field anywhere
 
-1. **ElevenLabs**, through a Cloudflare Pages Function using a server-side key. Anyone opening the live URL gets this with zero configuration.
+1. **ElevenLabs**, through a Cloudflare Pages Function using a server-side key. No key entry field exists anywhere in the UI.
 2. **Web Speech API**, whenever the proxy is absent, out of quota, or failing. A silent downgrade, never an error.
 3. **The manual keypad**, always on screen regardless.
+
+#### What the live demo is actually running
+
+Worth stating plainly rather than letting you find out: **the public demo currently speaks with layer 2, the browser voice.**
+
+The ElevenLabs path is complete and wired end to end — the proxy is deployed, `/api/health` reports `true`, the key authenticates, and the configured voice resolves on the account. But every *generation* call returns `402 payment_required`, including a stock voice on a different model. That is a product boundary rather than a bug: ElevenLabs bills the **Creative Platform** and the **API** separately, and this account's free credits are Creative-side, so there is no API balance behind an otherwise valid key.
+
+This is exactly the case layer 2 exists for. Hold the button on the live site and voice input, parsing, the confirmation chip and the spoken readback all work today. Point `ELEVENLABS_API_KEY` at an API-funded account and layer 1 takes over with **no code change** — only the secret and a redeploy.
+
+A voice feature that quietly dies at 3am because a credit balance ran out would be worse than useless to someone holding a cold puppy. That constraint shaped the design, and this deployment happens to demonstrate it working.
 
 Any non-200 from the proxy means *downgrade and continue* — `402` and `429` included. The active backend is shown as a small label in settings (`Voice: ElevenLabs` / `Voice: browser`).
 
