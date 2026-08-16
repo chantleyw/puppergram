@@ -190,6 +190,19 @@ That is the entire on-chain footprint of a sealed puppy: a prefix and a SHA-256.
 
 The QR is worth a note. A passport payload needs a 77-module symbol, so it is generated at 1024px with a full four-module quiet zone and only ever scaled *down* for display — roughly four pixels per module, twelve on a phone. Rendered small it does not merely scan poorly, it cannot be read at all. There is a copy-link button beside it too, because a phone cannot scan its own screen, and because a link is how a record actually gets passed on.
 
+### What the buyer actually needs
+
+Nothing from the breeder's device, and nothing installed.
+
+**The QR carries the whole passport, not a pointer to one.** Every weight, every care event, the parentage and the signature are gzipped into the URL itself — which is why it is 428 characters rather than 40. `/verify` reads the record straight out of the link, re-hashes it locally, and compares that against the memo it fetches from devnet. There is no account to look anything up in, and no server holding a copy.
+
+Two consequences worth being explicit about:
+
+- **The passport never touches our server.** It rides in the URL *fragment*, and fragments are not sent in HTTP requests. The record is decoded and hashed entirely in the buyer's browser.
+- **The chain stores a hash, not the record**, so the buyer must keep their copy — the link, the QR, the printout, or the JSON. A SHA-256 cannot be turned back into 380 g, 408 g, 438 g. That is precisely what keeps a puppy's history off a public ledger forever, but it means handing over the passport is a real handover, not a lookup key.
+
+The same asymmetry applies to the breeder: the litter lives in one browser's IndexedDB, with no server copy by design. **Download JSON** is the backup, and the app says so where it matters.
+
 **Provable without the chain at all:** that the digest itself behaves. The hashing, canonical JSON and tamper-detection are covered by tests — a single gram edited, a weight deleted, a care event added, and the key ordering reversed all change the digest, while re-serialising the same record does not:
 
 ```bash
