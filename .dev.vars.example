@@ -6,5 +6,6 @@
 # falls back to the Web Speech API, then to the manual keypad.
 ELEVENLABS_API_KEY=
 
-# Optional. Defaults to a public ElevenLabs voice if unset.
+# Optional. The readback voice is already set in functions/api/tts.ts, so this
+# only needs a value if you want a different one. A voice ID is not a secret.
 ELEVENLABS_VOICE_ID=

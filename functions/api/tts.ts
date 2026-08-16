@@ -15,8 +15,13 @@ const MAX_CHARS = 300;
 const PER_IP_DAILY = 40;
 const GLOBAL_DAILY = 2000;
 
-/** A calm, low-urgency public voice. Override per-deployment if you prefer. */
-const DEFAULT_VOICE_ID = '21m00Tcm4TlvDq8ikWAM';
+/**
+ * The readback voice. A voice ID is not a secret — it identifies a voice, it
+ * does not grant access to it — so it lives in the repo and the app works with
+ * no configuration beyond the API key. Override per-deployment with
+ * ELEVENLABS_VOICE_ID if you want a different one.
+ */
+const DEFAULT_VOICE_ID = 'LI283TzJcIwSKqsXiH7u';
 
 export const onRequestOptions: PagesFunction<Env> = async ({ request, env }) =>
   preflight(request, env);
