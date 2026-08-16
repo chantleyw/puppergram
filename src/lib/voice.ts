@@ -1,13 +1,16 @@
 /**
- * Voice backend resolution, in three layers:
+ * Transcription backend resolution, in three layers:
  *
- *   1. ElevenLabs, through our own Pages Function, using the server-side key.
- *      Anyone opening the live URL gets this with zero configuration.
+ *   1. ElevenLabs Scribe, through our own Pages Function, using the
+ *      server-side key. No key entry field exists anywhere in the UI.
  *   2. The Web Speech API, whenever the proxy is absent, out of quota, or
  *      failing. This is a silent downgrade, never an error.
  *   3. The manual keypad, which is always on screen regardless.
  *
  * Any non-200 from the proxy means "downgrade and continue".
+ *
+ * This governs speech-to-text only. Readback is always the browser's own
+ * synthesis — see the note further down.
  */
 
 export type Backend = 'elevenlabs' | 'browser' | 'none';
@@ -52,8 +55,9 @@ function recognitionCtor(): SpeechRecognitionCtor | null {
     | null;
 }
 
+/** The browser fallback for transcription needs recognition, not synthesis. */
 function browserCapable() {
-  return 'speechSynthesis' in window && recognitionCtor() !== null;
+  return recognitionCtor() !== null;
 }
 
 export async function resolveBackend(): Promise<Backend> {
@@ -89,23 +93,33 @@ export function backendLabel(b: Backend | null): string {
 }
 
 /* ================================================================== */
-/* Output — text to speech                                             */
+/* Output — spoken readback                                            */
 /* ================================================================== */
 
-let currentAudio: HTMLAudioElement | null = null;
+/**
+ * Readback uses the browser's own speech synthesis, deliberately.
+ *
+ * Transcription is the half where quality decides whether the feature works
+ * at all: mishearing "two forty five" as "240" writes a wrong weight into a
+ * medical record. Reading a line back is a solved problem that every browser
+ * already does offline and for free, so spending an API call — and a network
+ * round trip, at 3am, in a shed with no signal — buys nothing.
+ */
 
 export function stopSpeaking() {
-  if (currentAudio) {
-    currentAudio.pause();
-    currentAudio = null;
-  }
   if ('speechSynthesis' in window) window.speechSynthesis.cancel();
 }
 
-function speakInBrowser(text: string): Promise<void> {
+export function canSpeak(): boolean {
+  return 'speechSynthesis' in window;
+}
+
+export function speak(text: string): Promise<void> {
+  const trimmed = text.trim();
   return new Promise((resolve) => {
-    if (!('speechSynthesis' in window)) return resolve();
-    const u = new SpeechSynthesisUtterance(text);
+    if (!trimmed || !('speechSynthesis' in window)) return resolve();
+    stopSpeaking();
+    const u = new SpeechSynthesisUtterance(trimmed);
     // Calm and unhurried: this plays at 3am in a dim room.
     u.rate = 0.95;
     u.pitch = 0.95;
@@ -114,51 +128,6 @@ function speakInBrowser(text: string): Promise<void> {
     u.onerror = () => resolve();
     window.speechSynthesis.speak(u);
   });
-}
-
-export async function speak(text: string): Promise<void> {
-  const trimmed = text.trim();
-  if (!trimmed) return;
-  stopSpeaking();
-
-  const b = await resolveBackend();
-  if (b === 'none') return;
-
-  if (b === 'elevenlabs') {
-    try {
-      const res = await fetch('/api/tts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: trimmed }),
-      });
-      if (!res.ok) {
-        // 402 / 429 / anything else: downgrade and carry on.
-        demoteToBrowser();
-        return speakInBrowser(trimmed);
-      }
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const audio = new Audio(url);
-      currentAudio = audio;
-      await audio.play().catch(() => undefined);
-      return new Promise((resolve) => {
-        audio.onended = () => {
-          URL.revokeObjectURL(url);
-          if (currentAudio === audio) currentAudio = null;
-          resolve();
-        };
-        audio.onerror = () => {
-          URL.revokeObjectURL(url);
-          resolve();
-        };
-      });
-    } catch {
-      demoteToBrowser();
-      return speakInBrowser(trimmed);
-    }
-  }
-
-  return speakInBrowser(trimmed);
 }
 
 /* ================================================================== */

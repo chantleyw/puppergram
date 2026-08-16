@@ -1,11 +1,9 @@
 # Copy to `.dev.vars` for local Pages Functions development.
 # `.dev.vars` is gitignored and must never be committed.
 #
-# Leave this empty and the app still works end to end:
-# /api/health reports { elevenlabs: false } and voice silently
+# Used only for speech-to-text, via /api/stt. Leave it empty and the app still
+# works end to end: /api/health reports { elevenlabs: false } and transcription
 # falls back to the Web Speech API, then to the manual keypad.
+#
+# The key needs one permission: Speech to Text -> Access.
 ELEVENLABS_API_KEY=
-
-# Optional. The readback voice is already set in functions/api/tts.ts, so this
-# only needs a value if you want a different one. A voice ID is not a secret.
-ELEVENLABS_VOICE_ID=

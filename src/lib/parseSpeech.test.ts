@@ -87,6 +87,21 @@ describe('collar recognition', () => {
   });
 });
 
+describe('real transcripts from ElevenLabs scribe_v2', () => {
+  // Captured from the live /api/stt proxy. Scribe punctuates and hyphenates,
+  // which is exactly the shape that has to survive the parser.
+  it.each([
+    ['Blue, two forty-five', 'blue', 245],
+    ['Red, three hundred and ten.', 'red', 310],
+    ['Green two-forty', 'green', 240],
+  ])('parses %j', (transcript, collar, grams) => {
+    const r = parseSpeech(transcript);
+    expect(r.collar).toBe(collar);
+    expect(r.grams).toBe(grams);
+    expect(r.confidence).toBe('high');
+  });
+});
+
 describe('confidence and refusal', () => {
   it('is high only when both halves are present', () => {
     expect(parseSpeech('blue two forty five').confidence).toBe('high');

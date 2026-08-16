@@ -50,7 +50,7 @@ The engine is a pure function — `litter + puppies + weights + care → complet
 
 ```
  Test Files  4 passed (4)
-      Tests  91 passed (91)
+     Tests  118 passed (118)
 ```
 
 That includes a boundary test on each threshold in both directions (10% below peak does *not* fire; 10.1% does), a test that a normally-growing litter produces **zero** alerts, and a set of tests pinning the demo litter's exact alert profile so the headline scenario can't silently drift.
@@ -95,7 +95,7 @@ Backlogged entries are stored identically to live ones and feed the same rules, 
 
 **Voice is not a bolt-on here; it is the correct input method.** The user is holding a wet puppy in one hand and a kitchen scale in the other, at 3am, in a dim outbuilding. Typing is the worst available interface. Speaking *"blue, two forty five"* is the best one.
 
-![Speaking a weight and the row updating](docs/screenshots/voice.gif)
+![The weigh flow on a phone: one puppy per screen, giant keypad, hold-to-talk](docs/screenshots/weigh.png)
 
 ### Parsing real speech
 
@@ -120,17 +120,17 @@ The interesting case is the **elided hundred**: *"two forty five"* means 245, so
 2. **Web Speech API**, whenever the proxy is absent, out of quota, or failing. A silent downgrade, never an error.
 3. **The manual keypad**, always on screen regardless.
 
-#### What the live demo is actually running
+#### Why transcription and not readback
 
-Worth stating plainly rather than letting you find out: **the public demo currently speaks with layer 2, the browser voice.**
+ElevenLabs is used for **speech-to-text only**. That is a deliberate split, not a limitation worked around.
 
-The ElevenLabs path is complete and wired end to end — the proxy is deployed, `/api/health` reports `true`, the key authenticates, and the configured voice resolves on the account. But every *generation* call returns `402 payment_required`, including a stock voice on a different model. That is a product boundary rather than a bug: ElevenLabs bills the **Creative Platform** and the **API** separately, and this account's free credits are Creative-side, so there is no API balance behind an otherwise valid key.
+Transcription is the half where quality decides whether the feature works at all. Mishearing *"two forty five"* as *240* writes a wrong weight into what is effectively a medical record, and the error survives into every gain, every median and every alert downstream. That is worth a real model — `scribe_v2` handles a tired voice, a whining litter and a hard consonant far better than the browser does.
 
-This is exactly the case layer 2 exists for. Hold the button on the live site and voice input, parsing, the confirmation chip and the spoken readback all work today. Point `ELEVENLABS_API_KEY` at an API-funded account and layer 1 takes over with **no code change** — only the secret and a redeploy.
+Reading a line back is a solved problem. Every browser already does it offline, instantly, for free. Spending an API call, a network round trip and a credit to say *"Blue, 245 grams, up 18. Good."* buys nothing — and in an outbuilding with no signal it actively loses, because a cloud readback is silent exactly when the app is needed most.
 
-A voice feature that quietly dies at 3am because a credit balance ran out would be worse than useless to someone holding a cold puppy. That constraint shaped the design, and this deployment happens to demonstrate it working.
+So: **ElevenLabs transcribes, the device speaks.**
 
-Any non-200 from the proxy means *downgrade and continue* — `402` and `429` included. The active backend is shown as a small label in settings (`Voice: ElevenLabs` / `Voice: browser`).
+Any non-200 from the proxy means *downgrade and continue* — `402` and `429` included. The active backend is shown as a small label in settings (`Transcription: ElevenLabs` / `Transcription: browser`).
 
 The key never reaches the client. `/api/health` returns only a boolean:
 
@@ -138,11 +138,11 @@ The key never reaches the client. `/api/health` returns only a boolean:
 return new Response(JSON.stringify({ elevenlabs: Boolean(env.ELEVENLABS_API_KEY) }), …);
 ```
 
-`/api/tts` and `/api/stt` proxy server-side with an origin check, a per-IP daily counter, and a global daily cap. Upstream error bodies are never echoed to the client, because they can carry account detail. STT uses `scribe_v2` — note the widely-copied `scribe_v1` is now **deprecated**.
+`/api/stt` proxies server-side with an origin check, a per-IP daily counter, and a global daily cap. Upstream error bodies are never returned to the client, because they can carry account detail; only the status and a machine-readable cause are logged. The model is `scribe_v2` — note the widely-copied `scribe_v1` is now **deprecated**.
 
-### Output
+### Readback
 
-TTS reads back after every entry, escalating on a triage hit, in a calm low-urgency voice because this plays at 3am:
+The device reads back after every entry, escalating on a triage hit, in a calm low-urgency voice because this plays at 3am:
 
 - `"Blue, 245 grams, up 18. Good."`
 - `"Red has lost weight since the last weigh-in. Check warmth and nursing."`
@@ -282,6 +282,18 @@ Celsius and grams throughout. No unit switcher.
 Vite · React 18 · TypeScript · Tailwind · Dexie (IndexedDB) · Recharts · Cloudflare Pages + Pages Functions · `@solana/web3.js` (devnet) · vite-plugin-pwa · Tauri
 
 No accounts, no auth, no server-side database. Persistence is per-device.
+
+---
+
+## Screenshots
+
+**Desktop — the litter matrix.** Puppies as rows, days as columns, cells tinted by daily gain. Green's stall reads straight down the row: `+32 +30 +32 ±0 −2 −48`.
+
+![The desktop litter matrix](docs/screenshots/matrix.png)
+
+**Verify — no wallet, no account, nothing installed.**
+
+![The passport verification page](docs/screenshots/verify.png)
 
 ---
 

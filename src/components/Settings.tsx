@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   backendLabel,
+  canSpeak,
   currentBackend,
   onBackendChange,
   resolveBackend,
@@ -36,21 +37,25 @@ export function Settings() {
       <section className="card mb-3 px-4 py-4">
         <h2 className="display text-base text-cream">Voice</h2>
         <p className="mt-1 text-sm text-muted">
-          Voice: <span className="text-cream">{backendLabel(backend)}</span>
+          Transcription: <span className="text-cream">{backendLabel(backend)}</span>
         </p>
         <p className="mt-2 text-xs leading-relaxed text-muted">
           {backend === 'elevenlabs'
-            ? 'Using ElevenLabs through this site’s own server. No key is stored on your device and none is needed.'
+            ? 'Hold-to-talk is transcribed by ElevenLabs Scribe, through this site’s own server. No key is stored on your device and none is needed.'
             : backend === 'browser'
-              ? 'Using your browser’s built-in speech. This works offline on some platforms and needs no account.'
+              ? 'Hold-to-talk uses your browser’s built-in recognition. It needs no account, and the keypad is always there as well.'
               : backend === 'none'
-                ? 'This browser has no speech support. The keypad works exactly as well; it is just slower with one hand.'
-                : 'Checking which voice backend is available…'}
+                ? 'This browser cannot transcribe speech. The keypad works exactly as well; it is just slower with one hand.'
+                : 'Checking which transcription backend is available…'}
+        </p>
+        <p className="mt-2 text-xs leading-relaxed text-muted">
+          Readback is always spoken by your device, so it keeps working with no
+          signal and costs nothing.
         </p>
         <button
           type="button"
           onClick={() => void speak('Blue, two hundred and forty five grams, up eighteen. Good.')}
-          disabled={backend === 'none'}
+          disabled={!canSpeak()}
           className="tap mt-3 rounded-lg border border-cream/20 px-4 py-2 text-sm text-cream disabled:opacity-40"
         >
           Test readback
