@@ -98,8 +98,24 @@ function extractMemo(logs: string[] | null | undefined): string | null {
  * Fetches the memo behind a transaction signature. Read-only: no wallet, no
  * key, no signing. This is the half of the flow a buyer actually uses.
  */
+export class MemoLookupError extends Error {
+  /**
+   * `not-found` means devnet answered and has no such transaction — a real
+   * verdict. `unreachable` means we never got an answer, which is the only
+   * case where a cached result should stand in. Collapsing the two tells a
+   * buyer the network is down when actually their signature is wrong.
+   */
+  constructor(
+    message: string,
+    readonly code: 'not-found' | 'unreachable'
+  ) {
+    super(message);
+    this.name = 'MemoLookupError';
+  }
+}
+
 export async function fetchMemo(signature: string): Promise<OnChainMemo> {
-  let lastError: unknown = null;
+  let sawEndpoint = false;
 
   for (const endpoint of rpcEndpoints()) {
     try {
@@ -108,10 +124,9 @@ export async function fetchMemo(signature: string): Promise<OnChainMemo> {
         maxSupportedTransactionVersion: 0,
         commitment: 'confirmed',
       });
-      if (!tx) {
-        lastError = new Error('Transaction not found on devnet.');
-        continue;
-      }
+      // A null result is an answer, not a failure: the endpoint responded.
+      sawEndpoint = true;
+      if (!tx) continue;
       const raw = extractMemo(tx.meta?.logMessages);
       return {
         signature,
@@ -121,11 +136,23 @@ export async function fetchMemo(signature: string): Promise<OnChainMemo> {
         slot: tx.slot ?? null,
         endpoint,
       };
-    } catch (e) {
-      lastError = e;
+    } catch {
+      // The lookup failed, but that does not mean the network is down: an
+      // unparseable or unknown signature fails here too. Ask the endpoint a
+      // trivial question to find out which it was.
+      try {
+        const connection = makeConnection(endpoint);
+        await connection.getSlot();
+        sawEndpoint = true; // alive — so the signature is the problem
+      } catch {
+        // genuinely unreachable; try the next endpoint
+      }
     }
   }
-  throw lastError ?? new Error('Could not reach any Solana devnet endpoint.');
+
+  throw sawEndpoint
+    ? new MemoLookupError('No such transaction on devnet.', 'not-found')
+    : new MemoLookupError('Could not reach any Solana devnet endpoint.', 'unreachable');
 }
 
 export function isLikelySignature(s: string): boolean {

@@ -8,6 +8,7 @@ import {
 } from '../logic/passport';
 import { prettyDigest } from '../lib/hash';
 import {
+  MemoLookupError,
   cacheVerdict,
   cachedVerdict,
   explorerTxUrl,
@@ -28,6 +29,7 @@ type Verdict =
       blockTime: number | null;
     }
   | { kind: 'notfound'; signature: string; localDigest: string }
+  | { kind: 'nosuchtx'; signature: string }
   | {
       kind: 'offline';
       signature: string;
@@ -72,8 +74,15 @@ export function VerifyPage() {
         signature: sig,
         blockTime: memo.blockTime,
       });
-    } catch {
-      // RPC unreachable: show the cached verdict rather than an error.
+    } catch (e) {
+      // Devnet answered and has no such transaction: that is a verdict, not an
+      // outage, and must not be reported as one.
+      if (e instanceof MemoLookupError && e.code === 'not-found') {
+        setVerdict({ kind: 'nosuchtx', signature: sig });
+        return;
+      }
+      // Genuinely unreachable: fall back to the cached verdict if we have one,
+      // because verification must always render something.
       const cached = cachedVerdict(sig);
       if (cached) {
         setVerdict({ kind: 'offline', signature: sig, localDigest, cached });
@@ -217,6 +226,21 @@ function VerdictPanel({ verdict }: { verdict: Verdict }) {
           <span aria-hidden>●</span> Cannot check
         </p>
         <p className="mt-1 text-sm text-cream">{verdict.message}</p>
+      </div>
+    );
+  }
+
+  if (verdict.kind === 'nosuchtx') {
+    return (
+      <div className="card border-caution/40 bg-caution/10 px-4 py-4" role="alert">
+        <p className="text-sm font-semibold text-caution">
+          <span aria-hidden>●</span> No such transaction on devnet
+        </p>
+        <p className="mt-1 text-sm text-cream">
+          Devnet was reached and has no record of that signature. Check it was
+          copied in full, and that the passport was sealed on devnet rather
+          than another network.
+        </p>
       </div>
     );
   }

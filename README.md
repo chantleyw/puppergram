@@ -170,9 +170,19 @@ Buyers are handed printed "health records" that are trivially fabricated, and ha
 
 ### Verify it yourself
 
-**Example sealed transaction:** `PASTE_DEVNET_SIGNATURE_HERE` — paste it into [Solana Explorer (devnet)](https://explorer.solana.com/?cluster=devnet) and you will see the `PGRAM1:` memo.
+**No passport has been sealed on this deployment.** Sealing needs a funded devnet wallet, and there isn't one behind this build — so rather than show a signature that does not exist, here is exactly what you can and cannot check.
 
-`/verify` is standalone and read-only: **no wallet, no connection, no account.** That is the half a buyer actually uses, and it works for someone with nothing installed. Editing a sealed passport by a single gram changes the digest and produces a clear mismatch verdict.
+**Verifiable now, with nothing installed:** open [/verify](https://puppergram.pages.dev/verify), paste any passport JSON exported from the app, and give it any devnet signature. The page fetches that transaction, re-hashes your JSON, and compares. You will get a real verdict — `no Puppergram seal on that transaction` for an unrelated signature, and a clear mismatch if the memo carries a different digest.
+
+**Not demonstrated here:** a genuine matching pair. That needs someone to seal a puppy with a devnet-funded wallet, which takes about five minutes with Phantom and free faucet SOL.
+
+**Provable without the chain at all:** that the digest behaves correctly. The hashing, canonical JSON and tamper-detection are covered by tests — a single gram edited, a weight deleted, a care event added, and the key ordering reversed all change the digest, while re-serialising the same record does not:
+
+```bash
+npm test -- passport
+```
+
+`/verify` is standalone and read-only: **no wallet, no connection, no account.** That is the half a buyer actually uses, and it works for someone with nothing installed.
 
 If the RPC is unreachable, the last successful verification is shown with its timestamp rather than an error. Sealing may fail loudly; verification always renders something.
 
