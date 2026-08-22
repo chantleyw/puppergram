@@ -50,7 +50,7 @@ The engine is a pure function — `litter + puppies + weights + care → complet
 
 ```
  Test Files  4 passed (4)
-     Tests  118 passed (118)
+     Tests  126 passed (126)
 ```
 
 That includes a boundary test on each threshold in both directions (10% below peak does *not* fire; 10.1% does), a test that a normally-growing litter produces **zero** alerts, and a set of tests pinning the demo litter's exact alert profile so the headline scenario can't silently drift.
