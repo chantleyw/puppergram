@@ -1,14 +1,19 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { db } from '../db/schema';
-import { COLLAR_ORDER, DAY, HOUR } from '../db/constants';
+import { COLLAR_ORDER } from '../db/constants';
 import { loadLitterView, useLitterView } from '../hooks/useLitterView';
 import { backlogReadback, weighReadback } from '../logic/readback';
 import { parseSpeech, type ParseResult } from '../lib/parseSpeech';
 import { speak } from '../lib/voice';
 import { collarHex, fmtDate, relativeTime, toLocalInput } from '../lib/ui';
 import { VoiceButton } from './VoiceButton';
-import { dayIndex, lastPointBeforeDay, type PuppyView } from '../logic/triage';
+import {
+  dayIndex,
+  lastPointBeforeDay,
+  timestampForDay,
+  type PuppyView,
+} from '../logic/triage';
 
 const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'clear', '0', 'del'];
 
@@ -379,11 +384,6 @@ function DayTarget({
   const backlog = targetAt !== null;
   const days = Array.from({ length: ageDays + 1 }, (_, d) => d);
 
-  /* Midday of the day's bucket, so the entry lands unambiguously inside it,
-     clamped so it can never be in the future. */
-  function timestampForDay(d: number) {
-    return Math.min(whelpedAt + d * DAY + 12 * HOUR, Date.now());
-  }
 
   return (
     <div className="mx-4 mb-2">
@@ -444,7 +444,7 @@ function DayTarget({
                   key={d}
                   type="button"
                   onClick={() => {
-                    onChange(timestampForDay(d));
+                    onChange(timestampForDay(whelpedAt, d));
                     setOpen(false);
                   }}
                   title={`Day ${d}: ${n} of ${puppyCount} weighed`}

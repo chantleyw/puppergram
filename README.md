@@ -72,7 +72,11 @@ const weights = await db.weights.where('puppyId').anyOf(ids).sortBy('at');
 return buildLitterView(litter, puppies, weights, care);
 ```
 
-Everything else — day columns, per-puppy series, daily gains, litter medians, alerts, milestone state, feeding volumes, temperature targets — is derived on read. The consequence is that logging one weight by voice instantly updates the matrix, the chart, the alert banner, the timeline and the care cards, with no wiring between them.
+Everything else — day columns, per-puppy series, daily gains, litter medians, alerts, milestone state, feeding volumes, temperature targets — is derived on read.
+
+**Days are calendar days, not elapsed 24-hour blocks.** This sounds pedantic and is not: a litter whelped at 8pm would, counted in elapsed hours, still be on "day 14" at nine the next morning — so a breeder weighing at the same time each morning finds today's weigh-in filed under yesterday, and the briefing reporting a day that has already gone. The hour-based rules are untouched, because *"no gain in 24 hours"* is a claim about hours and compares timestamps directly. Only the columns follow dates.
+
+Nothing bounds the day count. Milestones stop at eight weeks because that is the app's scope, but weights, columns, charts and medians carry on for as long as you keep recording. The consequence is that logging one weight by voice instantly updates the matrix, the chart, the alert banner, the timeline and the care cards, with no wiring between them.
 
 ---
 

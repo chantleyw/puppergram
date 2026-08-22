@@ -1,5 +1,5 @@
 import { db, type CollarColour } from './schema';
-import { DAY, HOUR } from './constants';
+import { HOUR } from './constants';
 
 /**
  * A judge (or a breeder evaluating the app) should never meet an empty form.
@@ -30,16 +30,50 @@ export const SEED_PUPPIES: SeedPuppy[] = [
   { collar: 'pink', name: 'Pippin', sex: 'F', series: [405, 435, 467, 502, 539, 579, 622] },
 ];
 
-/** Weigh-in time drifts a little each day, the way a real notebook does. */
-export const OFFSET_HOURS = [0, 7.5, 7, 8, 7.25, 8.5, 7.75];
+/**
+ * Hour of the local day each weigh-in happened. Day 0 is the whelp itself;
+ * after that the time drifts a little, the way a real notebook does.
+ */
+export const OFFSET_HOURS = [6, 7.5, 7, 8, 7.25, 8.5, 7.75];
 
-/** The seeded litter's age offset, shared with the seed test. */
-export const SEED_AGE_MS = 6 * DAY + 8 * HOUR;
+/** How many calendar days old the seeded litter is. */
+export const SEED_AGE_DAYS = 6;
+
+/**
+ * Six calendar days ago at 6am local.
+ *
+ * Anchored to a date rather than to "now minus 156 hours", because days are
+ * calendar days: an hour offset would make the litter six days old in the
+ * afternoon and seven in the early morning.
+ */
+export function seedWhelpedAt(now: number = Date.now()): number {
+  const d = new Date(now);
+  d.setDate(d.getDate() - SEED_AGE_DAYS);
+  d.setHours(OFFSET_HOURS[0], 0, 0, 0);
+  return d.getTime();
+}
+
+/** Local midnight of the seeded litter's day `day`. */
+function seedDayStart(whelpedAt: number, day: number): number {
+  const d = new Date(whelpedAt);
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() + day);
+  return d.getTime();
+}
+
+/** When day `day` was weighed — never in the future, always inside that day. */
+function seedWeighAt(whelpedAt: number, day: number, now: number): number {
+  const start = seedDayStart(whelpedAt, day);
+  const target = start + OFFSET_HOURS[day] * HOUR;
+  // Today's weigh-in may not have happened yet at this hour, so pull it back
+  // rather than dating a weight in the future.
+  return Math.max(start, Math.min(target, now - 60_000));
+}
 
 export async function loadDemoLitter(now: number = Date.now()): Promise<number> {
-  // Whelped six days and eight hours ago, so the day-six weights are recent
-  // enough that nothing trips the "no weight in 36h" rule.
-  const whelpedAt = now - SEED_AGE_MS;
+  // Six calendar days old, with today's weigh-in already recorded, so nothing
+  // trips the "no weight in 36h" rule the moment the demo opens.
+  const whelpedAt = seedWhelpedAt(now);
 
   return db.transaction('rw', db.litters, db.puppies, db.weights, db.care, db.seals, async () => {
     const litterId = await db.litters.add({
@@ -60,7 +94,7 @@ export async function loadDemoLitter(now: number = Date.now()): Promise<number> 
       for (const [day, grams] of sp.series.entries()) {
         await db.weights.add({
           puppyId,
-          at: whelpedAt + day * DAY + OFFSET_HOURS[day] * HOUR,
+          at: seedWeighAt(whelpedAt, day, now),
           grams,
           source: day === 0 ? 'manual' : 'voice',
         });
@@ -70,7 +104,7 @@ export async function loadDemoLitter(now: number = Date.now()): Promise<number> 
     await db.care.add({
       litterId,
       kind: 'note',
-      at: whelpedAt + 4 * DAY + 9 * HOUR,
+      at: seedDayStart(whelpedAt, 4) + 9 * HOUR,
       note: 'Gorse slow to latch at the morning feed. Watching closely.',
     });
 

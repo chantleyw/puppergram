@@ -172,8 +172,52 @@ export interface LitterView {
 /* Helpers                                                             */
 /* ================================================================== */
 
+/** Local midnight on the calendar date containing `ms`. */
+export function startOfLocalDay(ms: number): number {
+  const d = new Date(ms);
+  d.setHours(0, 0, 0, 0);
+  return d.getTime();
+}
+
+/**
+ * Which day of the litter a moment falls on, counted in **calendar days**
+ * rather than elapsed 24-hour blocks.
+ *
+ * This matters more than it looks. A litter whelped at 8pm on a Friday would,
+ * on elapsed hours, still be on "day 14" at nine the following Saturday
+ * morning -- so a breeder weighing at the same time every morning would find
+ * today's weigh-in landing in yesterday's column, and the briefing reporting a
+ * day that had already passed. Breeders weigh once a day and think in dates,
+ * so the columns follow dates.
+ *
+ * The hour-based rules are unaffected: failure-to-gain, missing-entry and the
+ * 48-hour birth-weight grace all compare entry timestamps directly, never day
+ * numbers, because "no gain in 24 hours" is a claim about hours.
+ */
 export function dayIndex(at: number, whelpedAt: number): number {
-  return Math.floor((at - whelpedAt) / DAY);
+  // Rounded, not floored: DST makes some local days 23 or 25 hours long.
+  return Math.round((startOfLocalDay(at) - startOfLocalDay(whelpedAt)) / DAY);
+}
+
+/** Local midnight of the litter's day `day`. */
+export function startOfDay(whelpedAt: number, day: number): number {
+  const d = new Date(startOfLocalDay(whelpedAt));
+  d.setDate(d.getDate() + day); // handles month ends and DST
+  return d.getTime();
+}
+
+/**
+ * A sensible timestamp for recording against day `day` — midday, so the entry
+ * lands unambiguously inside that date — clamped so it is never in the future.
+ */
+export function timestampForDay(
+  whelpedAt: number,
+  day: number,
+  now: number = Date.now()
+): number {
+  const d = new Date(startOfDay(whelpedAt, day));
+  d.setHours(12, 0, 0, 0);
+  return Math.min(d.getTime(), now);
 }
 
 export function median(values: number[]): number | null {
@@ -270,7 +314,7 @@ export function buildLitterView(
 
   const days: DayColumn[] = dayNumbers.map((d) => ({
     day: d,
-    startsAt: whelpedAt + d * DAY,
+    startsAt: startOfDay(whelpedAt, d),
     label: `Day ${d}`,
     median: medianByDay.get(d) ?? null,
   }));

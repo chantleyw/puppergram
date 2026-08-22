@@ -1,7 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import {
   buildLitterView,
+  dayIndex,
   lastPointBeforeDay,
+  timestampForDay,
   type RuleId,
   type Severity,
 } from './triage';
@@ -407,6 +409,85 @@ describe('the backlog reference weight', () => {
   it('reaches back over gaps', () => {
     const sparse = view([p], [w(p.id!, 0, 400)], 9 * 24);
     expect(lastPointBeforeDay(sparse.puppies[0].points, 7)!.grams).toBe(400);
+  });
+});
+
+/* ------------------------------------------------------------------ */
+/* Day boundaries are calendar days, not elapsed 24-hour blocks         */
+/* ------------------------------------------------------------------ */
+
+describe('an evening whelp', () => {
+  /* Built with the local Date constructor, never UTC strings: day boundaries
+     are local midnights, so a fixture written in UTC would quietly test a
+     different scenario on a machine in another timezone. */
+  const local = (y: number, m: number, d: number, h = 0, min = 0) =>
+    new Date(y, m - 1, d, h, min, 0, 0).getTime();
+
+  const EVENING = local(2026, 8, 7, 19, 0); // whelped 7pm on the 7th
+  const evenLitter: Litter = { ...litter, whelpedAt: EVENING };
+  const blue: Puppy = { id: 900, litterId: 1, collar: 'blue', sex: 'F' };
+
+  const viewAt = (now: number, weights: WeightEntry[] = []) =>
+    buildLitterView(evenLitter, [blue], weights, [], now);
+
+  it('calls the next morning day 1, not day 0', () => {
+    // Only fourteen hours have elapsed, but it is plainly the next day.
+    expect(viewAt(local(2026, 8, 8, 9, 0)).ageDays).toBe(1);
+  });
+
+  it('rolls the day over at midnight, not at the whelp hour', () => {
+    expect(viewAt(local(2026, 8, 7, 23, 59)).ageDays).toBe(0);
+    expect(viewAt(local(2026, 8, 8, 0, 1)).ageDays).toBe(1);
+  });
+
+  it('does not report yesterday as today two weeks in', () => {
+    // The reported bug: on the 22nd the app still said day 14, because the
+    // elapsed-hours boundary had not yet ticked over that evening.
+    expect(viewAt(local(2026, 8, 22, 9, 0)).ageDays).toBe(15);
+  });
+
+  it('puts last night and this morning in different day columns', () => {
+    const weights: WeightEntry[] = [
+      { id: 1, puppyId: 900, at: local(2026, 8, 21, 19, 0), grams: 1265, source: 'manual' },
+      { id: 2, puppyId: 900, at: local(2026, 8, 22, 9, 0), grams: 1320, source: 'manual' },
+    ];
+    const v = viewAt(local(2026, 8, 22, 10, 0), weights);
+    expect(v.puppies[0].cells[14].point!.grams).toBe(1265);
+    expect(v.puppies[0].cells[15].point!.grams).toBe(1320);
+  });
+
+  it('still measures the hour-based rules in hours', () => {
+    // Consecutive calendar days but only fourteen hours apart, so this must
+    // not trip "no gain in 24h" — that rule is a claim about hours.
+    const weights: WeightEntry[] = [
+      { id: 1, puppyId: 900, at: local(2026, 8, 21, 19, 0), grams: 1265, source: 'manual' },
+      { id: 2, puppyId: 900, at: local(2026, 8, 22, 9, 0), grams: 1265, source: 'manual' },
+    ];
+    const v = viewAt(local(2026, 8, 22, 10, 0), weights);
+    expect(v.puppies[0].alerts.map((a) => a.ruleId)).not.toContain('failure-to-gain');
+  });
+
+  it('keeps counting past eight weeks', () => {
+    // Monitoring does not stop when the app's milestones run out.
+    expect(viewAt(local(2026, 10, 30, 9, 0)).ageDays).toBe(84);
+  });
+});
+
+describe('timestampForDay', () => {
+  const local = (y: number, m: number, d: number, h = 0) =>
+    new Date(y, m - 1, d, h, 0, 0, 0).getTime();
+  const EVENING = local(2026, 8, 7, 19);
+
+  it('lands at midday inside the requested calendar day', () => {
+    const t = timestampForDay(EVENING, 3, local(2026, 8, 22, 9));
+    expect(new Date(t).getHours()).toBe(12);
+    expect(new Date(t).getDate()).toBe(10);
+    expect(dayIndex(t, EVENING)).toBe(3);
+  });
+
+  it('never returns a moment in the future', () => {
+    const now = local(2026, 8, 22, 9);
+    expect(timestampForDay(EVENING, 15, now)).toBe(now);
   });
 });
 

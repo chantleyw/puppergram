@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { OFFSET_HOURS, SEED_AGE_MS, SEED_PUPPIES } from './seed';
-import { DAY, HOUR } from './constants';
+import { OFFSET_HOURS, SEED_PUPPIES, seedWhelpedAt } from './seed';
+import { HOUR } from './constants';
 import { buildLitterView } from '../logic/triage';
 import type { Litter, Puppy, WeightEntry } from './schema';
 
@@ -11,7 +11,7 @@ import type { Litter, Puppy, WeightEntry } from './schema';
  */
 
 const NOW = new Date('2026-08-16T09:00:00Z').getTime();
-const WHELPED = NOW - SEED_AGE_MS;
+const WHELPED = seedWhelpedAt(NOW);
 
 const litter: Litter = {
   id: 1,
@@ -29,6 +29,14 @@ const puppies: Puppy[] = SEED_PUPPIES.map((sp, i) => ({
   sex: sp.sex,
 }));
 
+/** Local midnight of the seeded litter's day `day`, as the seed computes it. */
+function dayStart(day: number): number {
+  const d = new Date(WHELPED);
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() + day);
+  return d.getTime();
+}
+
 const weights: WeightEntry[] = [];
 let wid = 1;
 for (const [i, sp] of SEED_PUPPIES.entries()) {
@@ -36,7 +44,7 @@ for (const [i, sp] of SEED_PUPPIES.entries()) {
     weights.push({
       id: wid++,
       puppyId: i + 1,
-      at: WHELPED + day * DAY + OFFSET_HOURS[day] * HOUR,
+      at: dayStart(day) + OFFSET_HOURS[day] * HOUR,
       grams,
       source: 'manual',
     });
